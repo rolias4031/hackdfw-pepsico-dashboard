@@ -30,8 +30,7 @@ ChartJS.register(
 Need to compute window size and then w/h.
 */
 
-
-export default function ExampleLineChart({ xValues, yValues, title }) {
+function LineChart({ xValues, yValues, title }) {
   const options = {
     responsive: true,
     plugins: {
@@ -76,3 +75,5 @@ export default function ExampleLineChart({ xValues, yValues, title }) {
 
   return <Line options={options} data={data} />;
 }
+
+export default LineChart;

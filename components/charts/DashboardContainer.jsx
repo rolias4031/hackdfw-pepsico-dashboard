@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from 'react-query';
 import PropTypes from 'prop-types';
+import { useQuery } from 'react-query';
 
 /*
 * this component does:
