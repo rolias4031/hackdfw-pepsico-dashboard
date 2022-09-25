@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import InfluencerCard from './influencer/InfluencerCard';
+import { render } from 'react-dom';
 
 /*
 * this component does:
@@ -8,57 +9,11 @@ import InfluencerCard from './influencer/InfluencerCard';
 - raises any data from the card components?
 */
 
-const influencers = [
-  {
-    name: 'Sailor Metz',
-    handle: '@sailormetz',
-    rating: 4.9,
-    likes: 50,
-    shares: 100,
-    views: 250,
-    contractEarnings: 200,
-    memberSince: '09/25/2022',
-    contact: {
-      email: 'sailor1234@gmail.com',
-      phone: '123-456-7890',
-    },
-  },
-  {
-    name: 'Jane Doe',
-    handle: '@jane1234',
-    rating: 5.0,
-    likes: 20,
-    shares: 321,
-    views: 1234,
-    contractEarnings: 388,
-    memberSince: '09/25/2022',
-    contact: {
-      email: 'janedoe@gmail.com',
-      phone: '123-456-7890',
-    },
-  },
-  {
-    name: 'Bill Billy',
-    handle: '@thebillman',
-    rating: 3.4,
-    likes: 49,
-    shares: 2,
-    views: 3479,
-    contractEarnings: 55,
-    memberSince: '09/25/2022',
-    contact: {
-      email: 'billbad@gmail.com',
-      phone: '123-456-7890',
-    },
-  },
-];
-
 const sortCategories = [
-  'rating',
-  'likes',
-  'shares',
-  'views',
-  'contractEarnings',
+  'engagementScore',
+  'likeCount',
+  'shareCount',
+  'viewCount',
 ];
 
 function createLabel(nameVal, labelVal = null) {
@@ -76,12 +31,34 @@ function createLabel(nameVal, labelVal = null) {
   return newLabel;
 }
 
-function InfluencerWrapper() {
-  const [sortBy, setSortBy] = useState('contractEarnings');
 
+
+function InfluencerWrapper({ activeBudgets }) {
+  const [sortBy, setSortBy] = useState('contractEarnings');
+  const [selectedBudget, setSelectedBudget] = useState()
+  const [influencers, setInfluencers] = useState()
+  console.log('selectedBudget', selectedBudget);
+  console.log('influencers', influencers);
+
+  const selectOptions = activeBudgets.map((budget) => {
+    const id = budget.budgetIdentifier;
+    return (
+      <option key={id} value={id}>
+        {id}
+      </option>
+    );
+  });
+ 
+  // happens after fetch, when influencers populated
   function changeHandler(event) {
     console.log(event.target.value);
     setSortBy(event.target.value);
+  }
+
+  function clickHandler(event) {
+    event.preventDefault();
+    console.log(selectedBudget);
+    fetchPerformanceData(selectedBudget);
   }
 
   const sortOptions = sortCategories.map((cat) => (
@@ -90,32 +67,69 @@ function InfluencerWrapper() {
     </option>
   ));
 
-  const allCards = influencers.map((influencer) => {
-    return <InfluencerCard key={influencer.name} data={influencer} />;
-  });
-
-  allCards.sort((a, b) => {
-    const aVal = a.props.data[sortBy],
-      bVal = b.props.data[sortBy];
-    console.log(aVal, bVal);
-    if (aVal > bVal) {
-      return -1;
-    } else if (aVal < bVal) {
-      return 1;
+  async function fetchPerformanceData(budgetID) {
+    const url =
+      'http://127.0.0.1:5000/viewInfluencersPerBudget?' +
+      new URLSearchParams({
+        budgetID,
+      });
+    try {
+      const response = await fetch(url)
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.message);
+      }
+      console.log('performance data fetch', result);
+      setInfluencers(() => {
+        return result
+      });
+    } catch (error) {
+      console.log(error);
     }
-    return 0;
-  });
+  }
 
-  const finalCards = allCards.map((card, i) => {
-    return (
-      <div className="w-1/2 my-3 mx-auto" key={i}>
-        {card}
-      </div>
-    );
-  });
+  function renderInfluencerCards() {
+    const allCards = influencers.map((influencer) => {
+      influencer.contractEarnings = Math.round(28*Math.random()) * Math.round(100*Math.random())
+      return <InfluencerCard key={influencer.name} data={influencer} />;
+    });
+    allCards.sort((a, b) => {
+      const aVal = a.props.data[sortBy],
+        bVal = b.props.data[sortBy];
+      console.log(aVal, bVal);
+      if (aVal > bVal) {
+        return -1;
+      } else if (aVal < bVal) {
+        return 1;
+      }
+      return 0;
+    });
+  
+    const finalCards = allCards.map((card, i) => {
+      return (
+        <div className="w-1/2 my-3 mx-auto" key={i}>
+          {card}
+        </div>
+      );
+    });
+    return finalCards
+  }
 
   return (
     <>
+      <div className="w-1/2">
+        <select
+          onChange={(event) => {
+            setSelectedBudget(event.target.value);
+          }}
+          name=""
+          id=""
+          value={selectedBudget}
+        >
+          {selectOptions}
+        </select>
+        <button onClick={clickHandler}>Fetch</button>
+      </div>
       <div className="w-1/2 my-3 mx-auto flex items-center space-x-2 justify-end">
         <label className="font-semibold" htmlFor="select-sort">
           Sort By:
@@ -130,7 +144,7 @@ function InfluencerWrapper() {
           {sortOptions}
         </select>
       </div>
-      {finalCards}
+      {influencers && renderInfluencerCards()}
     </>
   );
 }

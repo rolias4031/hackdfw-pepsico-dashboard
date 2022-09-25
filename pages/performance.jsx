@@ -14,13 +14,38 @@ import PerformanceContainer from '../components/performance/PerformanceContainer
 - Sorting mechanism, filtering through a map().
 */
 
+async function fetchActiveBudgets() {
+  const url = 'http://127.0.0.1:5000/getActiveBudgets';
+  const response = await fetch(url);
+  console.log(response);
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.message);
+  }
+  console.log(result);
+  return result;
+}
+
 export default function PerformancePage() {
-  const [performanceData, setPerformanceData] = useState([]);
-  return (
-    <div>
-      <PerformanceContainer raiseState={setPerformanceData}>
-        <InfluencerWrapper data={performanceData} />
-      </PerformanceContainer>
-    </div>
-  );
+  const [activeBudgets, setActiveBudgets] = useState([]);
+  const {
+    isLoading,
+    isError,
+    isSuccess,
+    data: budgets,
+  } = useQuery(['fetch-active-budgets'], fetchActiveBudgets, {
+    onSuccess: (budgets) => {
+      setActiveBudgets(() => budgets);
+    },
+  });
+
+  if (isSuccess) {
+    return (
+      <div>
+        <InfluencerWrapper
+          activeBudgets={activeBudgets}
+        />
+      </div>
+    );
+  }
 }
